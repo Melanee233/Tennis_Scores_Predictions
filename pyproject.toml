@@ -1,0 +1,41 @@
+[build-system]
+requires = [
+    "setuptools",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+requires-python = ">=3.10"
+name = "tennis_scores_predictions"
+readme = "README.md"
+dynamic = [
+    "version",
+]
+dependencies = [
+    "ipython>=8.10",
+    "jupyterlab>=3.0",
+    "notebook",
+    "kedro~=1.2.0",
+]
+
+[project.scripts]
+tennis-scores-predictions = "tennis_scores_predictions.__main__:main"
+
+[project.entry-points."kedro.hooks"]
+
+[tool.setuptools.dynamic.version]
+attr = "tennis_scores_predictions.__version__"
+
+[tool.setuptools.packages.find]
+where = [
+    "src",
+]
+namespaces = false
+
+[tool.kedro]
+package_name = "tennis_scores_predictions"
+project_name = "tennis_scores_predictions"
+kedro_init_version = "1.2.0"
+tools = "['Data Structure']"
+example_pipeline = "False"
+source_dir = "src"
