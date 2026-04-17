@@ -22,7 +22,12 @@ def create_pipeline(**kwargs) -> Pipeline:
             ),
             node(
                 evaluate_model,
-                inputs=dict(model="trained_model", X_test="X_test", y_test="y_test"),
+                inputs=dict(
+                    model="trained_model",
+                    X_test="X_test",
+                    y_test="y_test",
+                    params="params:model_training",
+                ),
                 outputs="metrics",
             ),
         ]
