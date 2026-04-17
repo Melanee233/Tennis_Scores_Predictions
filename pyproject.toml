@@ -16,6 +16,10 @@ dependencies = [
     "jupyterlab>=3.0",
     "notebook",
     "kedro~=1.2.0",
+    "kedro-datasets[pandas]>=3.0",
+    "numpy>=1.23",
+    "pandas>=2.0",
+    "scikit-learn>=1.4",
 ]
 
 [project.scripts]
@@ -39,3 +43,6 @@ kedro_init_version = "1.2.0"
 tools = "['Data Structure']"
 example_pipeline = "False"
 source_dir = "src"
+
+[tool.kedro_telemetry]
+project_id = "df1e15396c4b41fbb6e2988565e04488"
