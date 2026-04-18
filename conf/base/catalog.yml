@@ -1,4 +1,100 @@
-# Here you can define all your datasets by using simple YAML syntax.
-#
-# Documentation for this file format can be found in "The Data Catalog"
-# Link: https://docs.kedro.org/en/stable/catalog-data/introduction/#data-catalog
+combined_matches:
+  type: pandas.CSVDataset
+  filepath: data/01_raw/combined_matches.csv
+  load_args:
+    index_col: 0
+    low_memory: false
+
+matches_column_selected:
+  type: MemoryDataset
+
+matches_active_players:
+  type: MemoryDataset
+
+matches_nan_replaced:
+  type: MemoryDataset
+
+matches_entry_imputed:
+  type: MemoryDataset
+
+matches_seeds_dropped:
+  type: MemoryDataset
+
+matches_height_imputed:
+  type: MemoryDataset
+
+matches_rank_points_complete:
+  type: MemoryDataset
+
+matches_rank_complete:
+  type: MemoryDataset
+
+matches_demo_complete:
+  type: MemoryDataset
+
+matches_cleaned:
+  type: pandas.CSVDataset
+  filepath: data/02_intermediate/matches_cleaned.csv
+  save_args:
+    index: true
+
+matches_symmetric:
+  type: MemoryDataset
+
+matches_round_index:
+  type: MemoryDataset
+
+matches_elo:
+  type: MemoryDataset
+
+matches_diff_features:
+  type: MemoryDataset
+
+matches_pre_encoded:
+  type: MemoryDataset
+
+matches_features:
+  type: pandas.CSVDataset
+  filepath: data/03_primary/matches_features.csv
+  save_args:
+    index: true
+
+X_train:
+  type: pandas.CSVDataset
+  filepath: data/05_model_input/X_train.csv
+  load_args:
+    index_col: 0
+  save_args:
+    index: true
+
+X_test:
+  type: pandas.CSVDataset
+  filepath: data/05_model_input/X_test.csv
+  load_args:
+    index_col: 0
+  save_args:
+    index: true
+
+y_train:
+  type: pandas.CSVDataset
+  filepath: data/05_model_input/y_train.csv
+  load_args:
+    index_col: 0
+  save_args:
+    index: true
+
+y_test:
+  type: pandas.CSVDataset
+  filepath: data/05_model_input/y_test.csv
+  load_args:
+    index_col: 0
+  save_args:
+    index: true
+
+trained_model:
+  type: pickle.PickleDataset
+  filepath: data/06_models/trained_model.pkl
+
+metrics:
+  type: json.JSONDataset
+  filepath: data/08_reporting/metrics.json

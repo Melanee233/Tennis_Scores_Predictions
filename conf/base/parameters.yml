@@ -1,0 +1,14 @@
+data_cleaning:
+  active_since_date: 20200000
+
+feature_engineering:
+  random_state: 42
+  elo_init_rating: 1500.0
+  elo_k_factor: 32
+
+model_training:
+  target_column: player_A_won
+  test_size: 0.2
+  random_state: 42
+  n_estimators: 300
+  max_depth: 12
