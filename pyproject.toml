@@ -15,6 +15,7 @@ dependencies = [
     "ipython>=8.10",
     "jupyterlab>=3.0",
     "notebook",
+    "autogluon.tabular>=1.2",
     "kedro~=1.2.0",
     "kedro-datasets[pandas]>=3.0",
     "numpy>=1.23",

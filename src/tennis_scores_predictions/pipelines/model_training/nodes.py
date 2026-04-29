@@ -47,6 +47,9 @@ def train_random_forest(
     model = RandomForestClassifier(
         n_estimators=params["n_estimators"],
         max_depth=params["max_depth"],
+        min_samples_split=params["min_samples_split"],
+        min_samples_leaf=params["min_samples_leaf"],
+        max_features=params.get("max_features", "sqrt"),
         random_state=params["random_state"],
         n_jobs=-1,
     )
@@ -75,14 +78,19 @@ def evaluate_model(
         project=os.getenv("WANDB_PROJECT"),
         entity=os.getenv("WANDB_ENTITY"),
         name=f"RF-{datetime.now().strftime('%H:%M:%S')}-n{params['n_estimators']}",
+        group=os.getenv("WANDB_GROUP", "model-comparison"),
+        job_type="evaluation",
         config={
             "model_type": "RandomForest",
             "n_estimators": params["n_estimators"],
             "max_depth": params["max_depth"],
+            "min_samples_split": params["min_samples_split"],
+            "min_samples_leaf": params["min_samples_leaf"],
+            "max_features": params.get("max_features", "sqrt"),
             "random_state": params["random_state"],
             "test_size": params["test_size"],
         },
-        tags=["baseline", "sklearn"],
+        tags=["baseline", "random-forest", "sklearn"],
     )
 
     try:

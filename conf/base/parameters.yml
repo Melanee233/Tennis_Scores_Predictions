@@ -10,5 +10,17 @@ model_training:
   target_column: player_A_won
   test_size: 0.2
   random_state: 42
-  n_estimators: 300
-  max_depth: 12
+  n_estimators: 400
+  max_depth: 5
+  min_samples_split: 2
+  min_samples_leaf: 2
+  max_features: sqrt
+
+automl_training:
+  target_column: player_A_won
+  model_path: data/06_models/autogluon_predictor
+  eval_metric: roc_auc #f1
+  presets: medium_quality
+  time_limit: 600
+  verbosity: 2
+  clean_model_dir: true
