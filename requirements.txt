@@ -1,5 +1,6 @@
 ipython>=8.10
 jupyterlab>=3.0
 notebook
+autogluon.tabular>=1.2
 kedro~=1.2.0
 wandb>=0.19
