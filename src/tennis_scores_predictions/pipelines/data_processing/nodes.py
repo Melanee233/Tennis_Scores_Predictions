@@ -253,6 +253,7 @@ def drop_feature_metadata_columns(df: pd.DataFrame) -> pd.DataFrame:
         columns=[
             "tourney_id",
             "tourney_name",
+            "tourney_date",
             "player_A",
             "player_B",
             "index_round",

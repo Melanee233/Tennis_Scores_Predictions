@@ -19,7 +19,7 @@ model_training:
 automl_training:
   target_column: player_A_won
   model_path: data/06_models/autogluon_predictor
-  eval_metric: roc_auc #f1
+  eval_metric: roc_auc # Primary optimization metric, aligned with Random Forest tuning and model comparison.
   presets: medium_quality
   time_limit: 600
   verbosity: 2
