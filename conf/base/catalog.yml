@@ -52,13 +52,13 @@ matches_diff_features:
 
 matches_pre_encoded:
   type: pandas.CSVDataset
-  filepath: data/04_feature/matches_pre_encoded.csv
+  filepath: data/03_primary/matches_pre_encoded.csv
   save_args:
     index: false
 
 matches_features:
   type: pandas.CSVDataset
-  filepath: data/03_primary/matches_features.csv
+  filepath: data/04_feature/matches_features.csv
   save_args:
     index: false
 
