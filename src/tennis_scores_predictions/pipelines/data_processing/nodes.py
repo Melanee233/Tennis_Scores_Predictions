@@ -150,7 +150,7 @@ def add_round_index(df: pd.DataFrame) -> pd.DataFrame:
     required_columns = {"tourney_date", "round", "tourney_name"}
     missing_columns = required_columns - set(df.columns)
     if missing_columns:
-        raise ValueError(f"Brakuje wymaganych kolumn: {sorted(missing_columns)}")
+        raise ValueError(f"Missing required columns: {sorted(missing_columns)}")
 
     result_df = df.copy()
     result_df["year"] = result_df["tourney_date"].astype(str).str[:4]

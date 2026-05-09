@@ -1,101 +1,242 @@
-# tennis_scores_predictions
+# Tennis Scores Predictions
 
 [![Powered by Kedro](https://img.shields.io/badge/powered_by-kedro-ffc900?logo=kedro)](https://kedro.org)
 
-## Overview
+## Project Overview
 
-This is your new Kedro project, which was generated using `kedro 1.2.0`.
+This project predicts the outcome of professional women's tennis matches using historical WTA match data. It is built as a Kedro project and combines a reproducible data pipeline, feature engineering tailored to pre-match information, and two modeling approaches:
 
-Take a look at the [Kedro documentation](https://docs.kedro.org) to get started.
+- a baseline `RandomForestClassifier`
+- an AutoML workflow based on `AutoGluon Tabular`
 
-## Rules and guidelines
+The repository covers the full workflow from raw data ingestion to cleaned datasets, engineered features, trained models, and evaluation metrics.
 
-In order to get the best out of the template:
+## Main Goals
 
-* Don't remove any lines from the `.gitignore` file we provide
-* Make sure your results can be reproduced by following a data engineering convention
-* Don't commit data to your repository
-* Don't commit any credentials or your local configuration to your repository. Keep all your credentials and local configuration in `conf/local/`
+- build a reproducible end-to-end machine learning workflow for tennis match prediction
+- transform winner/loser match records into a symmetric player-versus-player training format
+- engineer informative pre-match features, including Elo-based strength estimates
+- compare a manually configured Random Forest model with an AutoML approach
+- optionally track experiments and artifacts with Weights & Biases
 
-## How to install dependencies
+## Tech Stack
 
-Declare any dependencies in `requirements.txt` for `pip` installation.
+- Python 3.10+
+- Kedro 1.2
+- pandas, NumPy, scikit-learn
+- AutoGluon Tabular
+- Weights & Biases
+- Jupyter notebooks for EDA and feature-design experiments
 
-To install them, run:
+## Dataset
 
+The project expects yearly CSV files with historical WTA match results. The helper script in [scripts/ingest_data.py](/scripts/ingest_data.py) downloads files for seasons `1968` through `2024`, concatenates them, and saves the combined dataset to:
+
+`data/01_raw/combined_matches.csv`
+
+The data dictionary for the most important raw columns is available in [notebooks/data_dictionary.md](/notebooks/data_dictionary.md).
+
+## Pipeline Overview
+
+The project contains three Kedro pipelines that can be run independently or together.
+
+### 1. Data Processing
+
+Source: [src/tennis_scores_predictions/pipelines/data_processing](/src/tennis_scores_predictions/pipelines/data_processing)
+
+This pipeline prepares model-ready data from the raw combined match history. The main steps are:
+
+- keep only columns available before a match starts
+- keep matches involving players active since 2020
+- standardize missing values
+- impute selected missing fields such as entry type and player height
+- remove rows with missing ranking or demographic data required downstream
+- convert winner/loser records into a symmetric `player_A` vs `player_B` representation
+- add a tournament round index
+- compute Elo ratings over time
+- build difference features such as ranking, age, height, ranking-points, and Elo gaps
+- one-hot encode categorical variables
+
+Key outputs:
+
+- `data/02_intermediate/matches_cleaned.csv`
+- `data/03_primary/matches_pre_encoded.csv`
+- `data/04_feature/matches_features.csv`
+
+### 2. Model Training
+
+Source: [src/tennis_scores_predictions/pipelines/model_training](/src/tennis_scores_predictions/pipelines/model_training)
+
+This pipeline trains a baseline `RandomForestClassifier` on the engineered feature table. It:
+
+- splits features and target
+- trains the model using parameters from `conf/base/parameters.yml`
+- evaluates the model with `accuracy`, `precision`, `recall`, `f1`, and `roc_auc`
+- stores metrics and, when configured, logs runs to Weights & Biases
+
+Key outputs:
+
+- `data/05_model_input/X_train.csv`
+- `data/05_model_input/X_test.csv`
+- `data/05_model_input/y_train.csv`
+- `data/05_model_input/y_test.csv`
+- `data/06_models/trained_model.pkl`
+- `data/08_reporting/metrics.json`
+
+### 3. AutoML Training
+
+Source: [src/tennis_scores_predictions/pipelines/automl_training](/src/tennis_scores_predictions/pipelines/automl_training)
+
+This pipeline reuses the prepared pre-encoded dataset and trains an `AutoGluon TabularPredictor`. It:
+
+- uses the same train/test split logic as the baseline model
+- fits an AutoML model under a configurable time limit
+- evaluates the predictor with the same core classification metrics
+- logs metrics, a leaderboard, and model artifacts to Weights & Biases when available
+
+Key outputs:
+
+- `data/06_models/autogluon_predictor/`
+- `data/08_reporting/automl_metrics.json`
+
+## Feature Engineering Logic
+
+The project is designed to avoid post-match leakage by relying on information that is known before a match. The most important feature-engineering ideas are:
+
+- symmetric player representation:
+  each match is rewritten as `player_A` vs `player_B`, and the order is randomly swapped to reduce positional bias
+- Elo ratings:
+  historical match order is used to compute evolving player strength estimates before and after each match
+- difference features:
+  numeric attributes are transformed into player-to-player gaps such as `diff_rank`, `diff_rank_points`, `diff_age`, `diff_ht`, and `diff_elo_before`
+- categorical encoding:
+  categorical match and player attributes are one-hot encoded for modeling
+
+## Repository Structure
+
+```text
+.
+|-- conf/
+|   `-- base/
+|       |-- catalog.yml
+|       `-- parameters.yml
+|-- data/
+|   |-- 01_raw/
+|   |-- 02_intermediate/
+|   |-- 03_primary/
+|   |-- 04_feature/
+|   |-- 05_model_input/
+|   |-- 06_models/
+|   `-- 08_reporting/
+|-- notebooks/
+|-- scripts/
+|   `-- ingest_data.py
+|-- src/tennis_scores_predictions/
+|   |-- pipeline_registry.py
+|   `-- pipelines/
+|       |-- data_processing/
+|       |-- model_training/
+|       `-- automl_training/
+|-- pyproject.toml
+`-- requirements.txt
 ```
+
+## Installation
+
+Install project dependencies with:
+
+```bash
 pip install -r requirements.txt
 ```
 
-## How to run your Kedro pipeline
+If you want the package installed in editable mode as well:
 
-You can run your Kedro project with:
-
+```bash
+pip install -e .
 ```
+
+## Configuration
+
+Core pipeline configuration lives in:
+
+- [conf/base/parameters.yml](/conf/base/parameters.yml)
+- [conf/base/catalog.yml](/conf/base/catalog.yml)
+
+Important configurable values include:
+
+- active-player cutoff date for filtering historical matches
+- Random Forest hyperparameters
+- Elo initialization and update settings
+- AutoGluon model path, preset, evaluation metric, and time limit
+
+Local secrets and machine-specific settings should be kept in `conf/local/` or in environment variables.
+
+## Environment Variables
+
+The repository uses environment variables for external integrations:
+
+- `DATA_URL`:
+  base URL used by [scripts/ingest_data.py](/scripts/ingest_data.py) to download yearly CSV files
+- `WANDB_PROJECT`
+- `WANDB_ENTITY`
+- `WANDB_GROUP` (optional, defaults to `model-comparison`)
+
+Example:
+
+```bash
+export DATA_URL="https://example.com/path/to/wta_matches_"
+export WANDB_PROJECT="tennis-score-prediction"
+export WANDB_ENTITY="your-team"
+```
+
+## How To Run
+
+### Download and combine raw data
+
+```bash
+python scripts/ingest_data.py
+```
+
+### Run the full Kedro workflow
+
+```bash
 kedro run
 ```
 
-## How to test your Kedro project
+### Run only one pipeline
 
-Have a look at the file `tests/test_run.py` for instructions on how to write your tests. You can run your tests as follows:
-
-```
-pytest
-```
-
-You can configure the coverage threshold in your project's `pyproject.toml` file under the `[tool.coverage.report]` section.
-
-
-## Project dependencies
-
-To see and update the dependency requirements for your project use `requirements.txt`. You can install the project requirements with `pip install -r requirements.txt`.
-
-[Further information about project dependencies](https://docs.kedro.org/en/stable/kedro_project_setup/dependencies.html#project-specific-dependencies)
-
-## How to work with Kedro and notebooks
-
-> Note: Using `kedro jupyter` or `kedro ipython` to run your notebook provides these variables in scope: `context`, 'session', `catalog`, and `pipelines`.
->
-> Jupyter, JupyterLab, and IPython are already included in the project requirements by default, so once you have run `pip install -r requirements.txt` you will not need to take any extra steps before you use them.
-
-### Jupyter
-To use Jupyter notebooks in your Kedro project, you need to install Jupyter:
-
-```
-pip install jupyter
+```bash
+kedro run --pipeline data_processing
+kedro run --pipeline model_training
+kedro run --pipeline automl_training
 ```
 
-After installing Jupyter, you can start a local notebook server:
+Because the default Kedro pipeline is the sum of all registered pipelines, `kedro run` executes the complete workflow end to end.
 
-```
-kedro jupyter notebook
-```
+## Notebooks
 
-### JupyterLab
-To use JupyterLab, you need to install it:
+The `notebooks/` directory contains exploratory and supporting work for:
 
-```
-pip install jupyterlab
-```
+- dataset inspection and description
+- exploratory data analysis
+- feature engineering experiments
+- Random Forest hyperparameter tuning
 
-You can also start JupyterLab:
+These notebooks complement the production Kedro pipelines, but the reproducible project workflow lives in `src/` and `conf/`.
 
-```
-kedro jupyter lab
-```
+## Current Outputs
 
-### IPython
-And if you want to run an IPython session:
+After a successful run, the project can produce:
 
-```
-kedro ipython
-```
+- cleaned and feature-engineered tabular datasets
+- train/test splits
+- a trained Random Forest model
+- an AutoGluon predictor directory
+- JSON metric reports for both training approaches
+- optional W&B experiment logs and model artifacts
 
-### How to ignore notebook output cells in `git`
-To automatically strip out all output cell contents before committing to `git`, you can use tools like [`nbstripout`](https://github.com/kynan/nbstripout). For example, you can add a hook in `.git/config` with `nbstripout --install`. This will run `nbstripout` before anything is committed to `git`.
+## Notes
 
-> *Note:* Your output cells will be retained locally.
-
-## Package your Kedro project
-
-[Further information about building project documentation and packaging your project](https://docs.kedro.org/en/stable/deploy/package_a_project/#package-an-entire-kedro-project)
+- raw datasets are intentionally not committed to the repository
+- the project currently focuses on binary prediction of whether `player_A` wins a match
+- the modeling workflow uses only pre-match information selected by the data-processing pipeline
